@@ -1,0 +1,21 @@
+# This file will automatically update with entries for new content after a build and reload.
+
+Items: {
+	Example: {
+		DisplayName: Example
+		Tooltip:
+			'''
+			Template of an item
+			Replacing this tooltip is duty 
+			It's snowing on Mt.Fuji
+			'''
+	}
+
+	ArcaneHand: {
+		DisplayName: Arcane Hand
+		Tooltip: ""
+	}
+}
+
+Projectiles.Blast.DisplayName: Blast
+"Keybinds.Debug Key.DisplayName": Debug  Key
