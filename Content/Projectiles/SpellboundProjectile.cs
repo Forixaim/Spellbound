@@ -18,6 +18,7 @@ namespace Spellbound.Content.Projectiles
         public override void OnSpawn(IEntitySource source)
         {
             base.OnSpawn(source);
+            spellData.
         }
 
         public override bool PreDraw(ref Color lightColor)

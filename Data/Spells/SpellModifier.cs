@@ -24,5 +24,5 @@ public abstract class SpellModifier : CoreContent
     /// <param name="value">A floating-point value that influences the AI logic applied to the projectile. The meaning of this value depends
     /// on the specific implementation.</param>
     public virtual void HandleAi(ModProjectile projectile, float value) {}
-    public virtual void Handle
+    public virtual void HandleStats(ModProjectile projectile, float value) {}
 }

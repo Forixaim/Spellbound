@@ -73,6 +73,15 @@ namespace Spellbound.Data.Spells
             }
         }
 
+        public void HandleStats(ModProjectile projectile)
+        {
+            foreach (SpellModifier modifier in Modifiers)
+            {
+                float value = Properties[modifier.FullName];
+                modifier.HandleStats(projectile, value);
+            }
+        }
+
         public static SpellInstance HandleReceive(BinaryReader reader)
         {
             byte NetVer = reader.ReadByte();
