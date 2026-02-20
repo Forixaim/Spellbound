@@ -1,9 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.IO;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using Spellbound.Content.Items;
 using Spellbound.Data.Magic;
 using Spellbound.Loaders;
 using Terraria.ModLoader;
@@ -14,32 +11,91 @@ namespace Spellbound.Data.Spells
     public class SpellInstance
     {
         public Element BoundElement { get; private set; }
-        public SpellType type { get; private set; }
+        public SpellType Type { get; set; }
         public Dictionary<string, float> Properties { get; } = new();
         public List<SpellModifier> Modifiers { get; } = new();
 
+        public SpellInstance(Element boundElement, SpellType type, Dictionary<string, float> properties)
+        {
+            BoundElement = boundElement;
+            Type = type;
+            foreach (var kvp in properties)
+            {
+                Properties.Add(kvp.Key, kvp.Value);
+            }
+            Modifiers.AddRange(BuildModifiers());
+        }
+
+        public float calculateTotalManaCost(CastingItem item)
+        {
+            return 0;
+        }
+
+        private SpellInstance() { }
+
+        public List<SpellModifier> BuildModifiers()
+        {
+            List<SpellModifier> modifiers = new();
+            foreach (var kvp in Properties)
+            {
+                var modifier = SpellModifierLoader.GetFromName(kvp.Key);
+                if (modifier != null)
+                {
+                    modifiers.Add(modifier);
+                }
+            }
+            return modifiers;
+        }
+
         public TagCompound Serialize()
         {
-            TagCompound tag = new TagCompound();
-            tag["Type"] = type.FullName;
-            tag["Properties"] = Properties;
-            tag["BoundElement"] = BoundElement?.FullName ?? "";
+            TagCompound tag = new TagCompound
+            {
+                ["Type"] = Type?.FullName ?? "",
+                ["BoundElement"] = BoundElement?.FullName ?? ""
+
+            };
+            TagCompound propertiesTag = new TagCompound();
+            if (Properties != null && Properties.Count > 0)
+            {
+                foreach (var kvp in Properties)
+                {
+                    if (!string.IsNullOrEmpty(kvp.Key))
+                    {
+                        propertiesTag[kvp.Key] = kvp.Value;
+                    }
+                }
+            }
+            tag["Properties"] = propertiesTag;
             return tag;
         }
 
         public static SpellInstance Deserialize(TagCompound tag)
         {
             SpellInstance instance = new SpellInstance();
-            Dictionary<string, float> properties = tag.Get<Dictionary<string, float>>("Properties");
-            foreach (var name in properties)
+
+            string typeName = tag.GetString("Type");
+            if (!string.IsNullOrEmpty(typeName))
             {
-                instance.AddModifier(SpellModifierLoader.GetFromName(name.Key), name.Value);
+                instance.Type = SpellLoader.GetFromName(typeName);
             }
+
             string elementName = tag.GetString("BoundElement");
             if (!string.IsNullOrEmpty(elementName))
             {
                 instance.BoundElement = ElementLoader.getFromName(elementName);
             }
+
+            TagCompound propertiesTag = tag.GetCompound("Properties");
+            foreach (var kvp1 in propertiesTag)
+            {
+                var modifier = SpellModifierLoader.GetFromName(kvp1.Key);
+                if (modifier != null) 
+                {
+                    instance.AddModifier(modifier, propertiesTag.GetFloat(kvp1.Key));
+                }
+            }
+
             return instance;
         }
 
@@ -54,6 +110,11 @@ namespace Spellbound.Data.Spells
 
         public void AddModifier(SpellModifier modifier, float value)
         {
+            // Check if modifier is null first, then check FullName
+            if (modifier == null || string.IsNullOrEmpty(modifier.FullName))
+            {
+                return;
+            }
             Modifiers.Add(modifier);
             Properties.Add(modifier.FullName, value);
         }
@@ -61,15 +122,19 @@ namespace Spellbound.Data.Spells
         public void HandleSend(BinaryWriter writer)
         {
             writer.Write(Spellbound.NetVer);
-            writer.Write(type.FullName ?? "");
-            writer.Write(BoundElement.FullName ?? "");
+            writer.Write(Type?.FullName ?? "");
+            writer.Write(BoundElement?.FullName ?? "");
 
             writer.Write7BitEncodedInt(Properties.Count);
-            
+
             foreach (var kvp in Properties)
             {
-                writer.Write(kvp.Key);
-                writer.Write(kvp.Value);
+                // Ensure we don't send null keys
+                if (!string.IsNullOrEmpty(kvp.Key))
+                {
+                    writer.Write(kvp.Key);
+                    writer.Write(kvp.Value);
+                }
             }
         }
 
@@ -88,7 +153,7 @@ namespace Spellbound.Data.Spells
 
             var s = new SpellInstance()
             {
-                type = SpellLoader.GetFromName(reader.ReadString()),
+                Type = SpellLoader.GetFromName(reader.ReadString()),
                 BoundElement = ElementLoader.getFromName(reader.ReadString()),
             };
 

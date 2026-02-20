@@ -1,5 +1,5 @@
-﻿using Spellbound.Data.Magic;
-using Microsoft.Xna.Framework;
+﻿using Microsoft.Xna.Framework;
+using Spellbound.Data.Magic;
 using Terraria;
 using Terraria.ID;
 using Terraria.ModLoader;

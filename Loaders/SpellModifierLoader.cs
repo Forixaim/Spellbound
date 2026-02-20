@@ -39,9 +39,9 @@ namespace Spellbound.Loaders
         }
 
         /// <summary>
-        /// A more programmer-friendly way to get the modifier. Returns the actual type of the modifier, so you can use it to get the modifier from the type instead of the name or id. This is useful for modders who want to get the modifier from the type, which is more stable than the name or id. This is also useful for serialization and deserialization of the modifiers, as you can use the type to get the modifier instead of the name.
+        /// A more programmer-friendly way to get the modifier. Returns the actual Type of the modifier, so you can use it to get the modifier from the Type instead of the name or id. This is useful for modders who want to get the modifier from the Type, which is more stable than the name or id. This is also useful for serialization and deserialization of the modifiers, as you can use the Type to get the modifier instead of the name.
         /// </summary>
-        /// <typeparam name="TC"> The most stable way for modders to get the modifier, but since the type itself cannot be serialized or deserialized, this is not used for that. This is primarily for modders who want to get the modifier from the type, which is more stable than the name or id. This is also useful for serialization and deserialization of the modifiers, as you can use the type to get the modifier instead of the name improving intuition.
+        /// <typeparam name="TC"> The most stable way for modders to get the modifier, but since the Type itself cannot be serialized or deserialized, this is not used for that. This is primarily for modders who want to get the modifier from the Type, which is more stable than the name or id. This is also useful for serialization and deserialization of the modifiers, as you can use the Type to get the modifier instead of the name improving intuition.
         /// </typeparam>
         /// <returns></returns>
         public static SpellModifier GetFromType<TC>() where TC : SpellModifier

@@ -14,7 +14,6 @@ namespace Spellbound.Content.Spells
         public override void SetDefaults()
         {
             base.SetDefaults();
-            name = "Blast";
             baseVelocity = 10f;
             ProjectileID = ModContent.ProjectileType<Projectiles.Blast>();
         }

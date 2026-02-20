@@ -15,10 +15,6 @@ namespace Spellbound.Data.Spells
         public float baseAttackSpeed { get; protected set; }
         public float baseVelocity { get; protected set; }
         public float basePenetration { get; protected set; }
-        public Element boundElement { get; set; }
-
-        private new string Name { get; set; }
-        private new string FullName { get; set; }
 
         public virtual void SetDefaults()
         {
@@ -32,8 +28,8 @@ namespace Spellbound.Data.Spells
         public sealed override void Load(Mod mod)
         {
             SetDefaults();
-            mod.Logger.Debug($"Loaded spell: {Name}");
             Name = GetType().Name;
+            mod.Logger.Debug($"Loaded spell: {Name}");
             FullName = $"{mod.Name}/Spell/{Name}";
             TypeID = SpellLoader.LoadedContent.Count;
             SpellLoader.LoadedContent.Add(this);

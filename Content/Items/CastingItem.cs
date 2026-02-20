@@ -21,81 +21,39 @@ namespace Spellbound.Content.Items
 		public float DamageMultiplier { get; protected set; }
 		public float KnockbackMultiplier { get; protected set; }
 		public string CurrentPlayer;
-		public Dictionary<string, int> equippedSpell { get; protected set; }
-		public readonly Dictionary<string, List<SpellInstance>> StoredSpells = new();
+        public int equippedSpell { get; protected set; } = 0;
+		public readonly List<SpellInstance> StoredSpells = new();
 
 		public override void SaveData(TagCompound tag)
 		{
-			Dictionary<string, int> equippedSpells = new();
-			foreach (var kvp in equippedSpell)
-			{
-				equippedSpells[kvp.Key] = kvp.Value;
-			}
-			tag["spellbound:equippedSpells"] = equippedSpells;
-			Dictionary<string, List<TagCompound>> storedSpells = new();
-			foreach (var kvp in StoredSpells)
-			{
-				List<TagCompound> spellList = new();
-				foreach (var spell in kvp.Value)
-				{
-					spellList.Add(spell.Serialize());
-				}
-				storedSpells[kvp.Key] = spellList;
-			}
-			tag["spellbound:storedSpells"] = storedSpells;
-			base.SaveData(tag);
-		}
-
-		public override void LoadData(TagCompound tag)
-		{
-			base.LoadData(tag);
-			Dictionary<string, int> equippedSpellsBuffer;
-			Dictionary<string, List<TagCompound>> storedSpellsBuffer;
-			if (tag.TryGet("spellbound:equippedSpells", out equippedSpellsBuffer))
-			{
-				if (equippedSpellsBuffer.Count > 0)
-				{
-					foreach (var kvp in equippedSpellsBuffer)
-					{
-						equippedSpell[kvp.Key] = kvp.Value;
-					}
-				}
-			}
-
-			if (tag.TryGet("spellbound:storedSpells", out storedSpellsBuffer))
-			{
-				if (storedSpellsBuffer.Count > 0)
-				{
-					foreach (var kvp in storedSpellsBuffer)
-					{
-						List<SpellInstance> instanceBuffer = new();
-						foreach (var spellTag in kvp.Value)
-						{
-							instanceBuffer.Add(SpellInstance.Deserialize(spellTag));
-						}
-						StoredSpells[kvp.Key] = instanceBuffer;
-					}
-				}
-			}
-		}
-
-		//Netcode is used for multiplayer syncing, so we need to sync the equipped spell index and its properties
-		public override void NetSend(BinaryWriter writer)
-		{
-			base.NetSend(writer);
-			int index = equippedSpell.GetValueOrDefault(CurrentPlayer, 0);
-			writer.Write(index);
-			List<SpellInstance> playerSpells = StoredSpells.GetValueOrDefault(CurrentPlayer, null);
-            if (playerSpells != null)
+			tag["spellbound:equippedSpells"] = equippedSpell;
+			List<TagCompound> storedSpellsTag = new();
+            foreach (var spell in StoredSpells)
             {
-				playerSpells[index].HandleSend(writer);
+				storedSpellsTag.Add(spell.Serialize());
             }
+			tag["spellbound:storedSpells"] = storedSpellsTag;
+		}
+
+        public override void LoadData(TagCompound tag)
+        { 
+			if (tag.ContainsKey("spellbound:equippedSpells"))
+                equippedSpell = tag.GetInt("spellbound:equippedSpells");
+            if (tag.ContainsKey("spellbound:storedSpells"))
+            {
+                List <TagCompound> storedSpellsTag = tag.Get<List<TagCompound>>("spellbound:storedSpells");
+                foreach (var tags in storedSpellsTag)
+                {
+                    StoredSpells.Add(SpellInstance.Deserialize(tags));
+                }
+            }
+            
         }
 
-		public override void NetReceive(BinaryReader reader)
+
+        public override void NetReceive(BinaryReader reader)
 		{
 			base.NetReceive(reader);
-			int index = reader.ReadInt32();
             
         }
 
@@ -113,13 +71,6 @@ namespace Spellbound.Content.Items
 		public override bool AltFunctionUse(Player player)
 		{
 			//TODO: Cycle through stored spells
-			List<SpellInstance> playerSpells = StoredSpells.GetValueOrDefault(player.GetModPlayer<MagicPlayerData>().PlayerGuid, new List<SpellInstance>());
-			int index = equippedSpell.GetValueOrDefault(player.GetModPlayer<MagicPlayerData>().PlayerGuid, 0);
-			if (playerSpells.Count > 0)
-			{
-				index = (index + 1) % playerSpells.Count;
-				equippedSpell[player.GetModPlayer<MagicPlayerData>().PlayerGuid] = index;
-			}
 			return base.AltFunctionUse(player);
 		}
 
@@ -127,70 +78,67 @@ namespace Spellbound.Content.Items
 		{
 			//:TODO: Open spell placement UI
 			//Create the list if it doesn't exist
-			if (!StoredSpells.ContainsKey(player.GetModPlayer<MagicPlayerData>().PlayerGuid))
-			{
-				StoredSpells[player.GetModPlayer<MagicPlayerData>().PlayerGuid] = new List<SpellInstance>();
-			}
+
+            if (StoredSpells.Count == 0)
+            {
+                if (Spellbound.debug && (Main.netMode == NetmodeID.SinglePlayer || Main.netMode == NetmodeID.MultiplayerClient))
+                {
+					
+					Main.NewText("No spells stored, adding debug spell");
+					SpellInstance test = new SpellInstance(player.GetModPlayer<MagicPlayerData>().LearnedElements[0], SpellLoader.GetFromType<Blast>(), new Dictionary<string, float>());
+                    if (test.Type == null)
+                    {
+						Main.NewText("There is no spell...");
+                        return;
+                    }
+                    Main.NewText("Spell created named: " + test.Type.FullName + ". bound to Element: " + test.BoundElement.Name);
+					StoredSpells.Add(test);
+                }
+            }
 			base.RightClick(player);
 		}
 
-		public override void ModifyManaCost(Player player, ref float reduce, ref float mult)
+        public override bool ConsumeItem(Player player)
+        {
+            return false;
+        }
+
+        public override bool CanRightClick()
+        {
+            return true;
+        }
+
+        public override void ModifyManaCost(Player player, ref float reduce, ref float mult)
 		{
-			string uid = player.GetModPlayer<MagicPlayerData>().PlayerGuid;
 			int mana = Item.mana;
-			int spellManaCost = equippedSpellType != null ? (int)equippedSpellType.baseManaCost : 0;
-			//get the difference to set it to the spell mana cost, then apply the multiplier
-			int difference = spellManaCost - mana;
-			reduce -= difference;
+			// int spellManaCost = equippedSpellType != null ? (int)equippedSpellType.baseManaCost : 0;
+			// //get the difference to set it to the spell mana cost, then apply the multiplier
+			// int difference = spellManaCost - mana;
+			// reduce -= difference;
 
 			base.ModifyManaCost(player, ref reduce, ref mult);
 		}
 
 		public override void ModifyWeaponDamage(Player player, ref StatModifier damage)
 		{
-			string uid = player.GetModPlayer<MagicPlayerData>().PlayerGuid;
 
-			damage.Base = equippedSpellType.baseDamage;
-			StatModifier multiplier = new StatModifier(0, equippedSpellType.boundElement.DamageMultiplier);
-			damage.CombineWith(multiplier);
+			//damage.Base = equippedSpellType.baseDamage;
+			//StatModifier multiplier = new StatModifier(0, equippedSpellType.boundElement.DamageMultiplier);
+			//damage.CombineWith(multiplier);
 		}
 
-		public override void UpdateInventory(Player player)
-		{
-			CurrentPlayer = player;
-			if (player !=)
-		}
-
-		//Internal methods
-		private SpellInstance GetEquippedSpell(Player player)
-		{
-			string uid = player.GetModPlayer<MagicPlayerData>().PlayerGuid;
-			List<SpellInstance> playerSpells = StoredSpells.GetValueOrDefault(uid, new List<SpellInstance>());
-			int index = equippedSpell.GetValueOrDefault(uid, 0);
-			if (playerSpells.Count > 0 && index < playerSpells.Count)
-			{
-				return playerSpells[index];
-			}
-			return null;
-		}
+        public override bool CanUseItem(Player player)
+        {
+            return base.CanUseItem(player);
+        }
 
 		public override void ModifyShootStats(Player player, ref Vector2 position, ref Vector2 velocity, ref int type, ref int damage,
 			ref float knockback)
 		{
 			MagicPlayerData data = player.GetModPlayer<MagicPlayerData>();
 
-			if (equippedSpell[data.PlayerGuid]. is ProjectileSpellType pSpell)
-			{
-				
-				type = pSpell.ProjectileID;
-				if (velocity == Vector2.Zero)
-				{
-					return;
-				}
-				velocity.Normalize();
-				velocity *= pSpell.baseVelocity * FociVelocityMultiplier * pSpell.boundElement.ProjectileSpeedMultiplier;
-
-			}
-		}
+			int index = equippedSpell;
+            base.ModifyShootStats(player, ref position, ref velocity, ref type, ref damage, ref knockback);
+        }
 	}
 }

@@ -1,11 +1,14 @@
-﻿using Spellbound.Data.Magic;
-using Spellbound.Loaders;
+﻿using Spellbound.Loaders;
 using System;
 using System.Collections.Generic;
 using Microsoft.Xna.Framework;
+using Spellbound.Content.Elements;
 using Spellbound.Content.Items;
+using Spellbound.Content.Spells;
+using Spellbound.Data.Magic;
 using Spellbound.Data.Spells;
 using Terraria;
+using Terraria.ID;
 using Terraria.ModLoader;
 using Terraria.ModLoader.IO;
 
@@ -16,13 +19,16 @@ namespace Spellbound.Data
         public List<Element> LearnedElements = new();
         public bool PureElemental = false;
         public bool FirstTime = true;
-        public string PlayerGuid = string.Empty;
         public List<SpellType> LearnedSpells = new();
         public override bool IsCloneable => false;
         public override void Initialize()
         {
             base.Initialize();
-            PlayerGuid = Guid.NewGuid().ToString("N");
+            if (Spellbound.debug && LearnedElements.Count == 0)
+            {
+                LearnedElements.Add(ElementLoader.getFromType<LightElement>());
+            }
+            LearnedSpells.Add(SpellLoader.GetFromType<Blast>());
         }
 
         public override void OnEnterWorld()
@@ -42,24 +48,28 @@ namespace Spellbound.Data
 
         public override IEnumerable<Item> AddStartingItems(bool mediumCoreDeath)
         {
-            yield return new Item(ModContent.ItemType<ArcaneHand>());
+            Item item = new Item(ModContent.ItemType<ArcaneHand>());
+            item.Prefix(PrefixID.Mythical);
+            yield return item;
         }
 
         public override void SaveData(TagCompound tag)
         {
             if (tag != null)
             {
-                string[] spellIds = new string[LearnedSpells.Count];
-                string[] elementIds = new string[LearnedElements.Count];
+                List<string> spellIds = new();
+                List<string> elementIds = new();
                 foreach (Element element in LearnedElements)
                 {
-                    elementIds[LearnedElements.IndexOf(element)] = element.FullName;
+                    if (element != null)
+                    {
+                        elementIds.Add(element.FullName ?? "");
+                    }
                 }
                 foreach (SpellType spell in LearnedSpells)
                 {
-                    spellIds[LearnedSpells.IndexOf(spell)] = spell.FullName;
+                    spellIds.Add(spell.FullName ?? "");
                 }
-                tag.Add("spellbound:playerGuid", PlayerGuid);
                 tag.Add("spellbound:pureElemental", PureElemental);
                 tag.Add("spellBound:firstTime", FirstTime);
                 tag.Add("spellbound:learnedElements", elementIds);
@@ -77,17 +87,9 @@ namespace Spellbound.Data
             {
                 PureElemental = tag.GetBool("spellbound:pureElemental");
             }
-            if (tag.ContainsKey("spellbound:playerGuid"))
-            {
-                PlayerGuid = tag.GetString("spellbound:playerGuid");
-            }
-            else
-            {
-                PlayerGuid = Guid.NewGuid().ToString("N");
-            }
             if (tag.ContainsKey("spellbound:learnedElements"))
             {
-                string[] elementIds = tag.Get<List<string>>("spellbound:learnedElements").ToArray();
+                List<string> elementIds = tag.Get<List<string>>("spellbound:learnedElements");
                 foreach (string id in elementIds)
                 {
                     Element element = ElementLoader.getFromName(id);
@@ -99,9 +101,10 @@ namespace Spellbound.Data
             }
             if (tag.ContainsKey("spellbound:learnedSpells"))
             {
-                string[] spellIds = tag.Get<List<string>>("spellbound:learnedSpells").ToArray();
+                List<string> spellIds = tag.Get<List<string>>("spellbound:learnedSpells");
                 foreach (string id in spellIds)
                 {
+                    if (id == "") continue;
                     SpellType spell = SpellLoader.GetFromName(id);
                     if (spell != null)
                     {

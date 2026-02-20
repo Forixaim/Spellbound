@@ -9,7 +9,6 @@ namespace Spellbound.Loaders
     public class SpellLoader
     {
         public static readonly List<SpellType> LoadedContent = new();
-        private static int id;
 
         public static SpellType GetFromID(int id)
         {
@@ -25,6 +24,7 @@ namespace Spellbound.Loaders
                     return type;
                 }
             }
+            return null;
         }
 
         public static SpellType GetFromType<TC>() where TC : SpellType
@@ -36,7 +36,6 @@ namespace Spellbound.Loaders
                     return t;
                 }
             }
-
             return null;
         }
     }

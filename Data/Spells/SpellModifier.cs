@@ -6,6 +6,7 @@ public abstract class SpellModifier : CoreContent
 {
     public float Minimum { get; protected set; }
     public float Maximum { get; protected set; }
+    public float Complexity { get; protected set; }
     public override void Load(Mod mod)
     {
         Name = GetType().Name;

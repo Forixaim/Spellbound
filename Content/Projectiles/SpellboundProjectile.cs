@@ -1,4 +1,5 @@
-﻿using Microsoft.Xna.Framework;
+﻿using System.IO;
+using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using Spellbound.Data;
 using Spellbound.Data.Spells;
@@ -13,19 +14,31 @@ namespace Spellbound.Content.Projectiles
 {
     public abstract class SpellboundProjectile : ModProjectile
     {
-        public SpellInstance spellData;
+        public SpellInstance SpellData;
 
         public override void OnSpawn(IEntitySource source)
         {
             base.OnSpawn(source);
-            spellData.
+            SpellData.HandleStats(this);
+        }
+
+        public override void SendExtraAI(BinaryWriter writer)
+        {
+            base.SendExtraAI(writer);
+            SpellData.HandleSend(writer);
+        }
+
+        public override void ReceiveExtraAI(BinaryReader reader)
+        {
+            base.ReceiveExtraAI(reader);
+            SpellData = SpellInstance.HandleReceive(reader);
         }
 
         public override bool PreDraw(ref Color lightColor)
         {
             Player player = Main.player[Projectile.owner];
             MagicPlayerData modPlayer = player.GetModPlayer<MagicPlayerData>();
-            Color projColor = spellData.BoundElement.MagicColor;
+            Color projColor = SpellData.BoundElement.MagicColor;
             Texture2D tex = TextureAssets.Projectile[Projectile.type].Value;
 
             Vector2 pos = Projectile.Center - Main.screenPosition;
@@ -73,6 +86,12 @@ namespace Spellbound.Content.Projectiles
             return false;
         }
 
+        public override void AI()
+        {
+            SpellData.HandleAi(this);
+            base.AI();
+        }
+
         public override void ModifyDamageHitbox(ref Rectangle hitbox)
         {
             
@@ -81,7 +100,7 @@ namespace Spellbound.Content.Projectiles
 
         public void initializeData(SpellInstance data)
         {
-            spellData = data;
+            SpellData = data;
         }
 
         public override void OnKill(int timeLeft)

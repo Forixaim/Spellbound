@@ -1,12 +1,12 @@
 ﻿using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
-using Spellbound.Data.Magic;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Spellbound.Data;
+using Spellbound.Data.Magic;
 using Spellbound.Loaders;
 using Terraria;
 using Terraria.ModLoader;

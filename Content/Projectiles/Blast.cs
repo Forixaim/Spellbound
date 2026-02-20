@@ -26,37 +26,11 @@ namespace Spellbound.Content.Projectiles
         public override void AI()
         {
             base.AI();
-            Player player = Main.player[Projectile.owner];
-            MagicPlayerData modPlayer = player.GetModPlayer<MagicPlayerData>();
-
-
-
-            for (int i = 0; i < Main.maxProjectiles; i++)
-            {
-                Projectile other = Main.projectile[i];
-
-                if (!other.active) continue;
-                if (other.whoAmI == Projectile.whoAmI) continue; // skip self
-                if (other.owner == Projectile.owner) continue;  // optional: skip same owner
-                if (other.friendly == Projectile.friendly) continue; // skip same team
-
-                if (Projectile.Hitbox.Intersects(other.Hitbox))
-                {
-                    Projectile.Kill();
-                    other.Kill();
-                    return;
-                }
-            }
         }
 
         public override void OnKill(int timeLeft)
         {
             base.OnKill(timeLeft);
-        }
-
-        public override void OnSpawn(IEntitySource source)
-        {
-            
         }
     }
 }
