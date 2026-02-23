@@ -26,9 +26,14 @@ namespace Spellbound.Data.Spells
             Modifiers.AddRange(BuildModifiers());
         }
 
-        public float calculateTotalManaCost(CastingItem item)
+        public float CalculateBaseManaCost(CastingItem item)
         {
-            return 0;
+            return Type.baseManaCost;
+        }
+
+        public float CalculateVelocity(CastingItem item)
+        {
+            return Type.baseVelocity * BoundElement.ProjectileSpeedMultiplier;
         }
 
         private SpellInstance() { }
