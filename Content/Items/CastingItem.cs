@@ -128,6 +128,8 @@ namespace Spellbound.Content.Items
             base.ModifyManaCost(player, ref reduce, ref mult);
 		}
 
+
+
 		public override void ModifyWeaponDamage(Player player, ref StatModifier damage)
 		{
 
@@ -158,5 +160,20 @@ namespace Spellbound.Content.Items
                 velocity *= spell.CalculateVelocity(this);
             }
 		}
-	}
+
+        public override bool Shoot(Player player, EntitySource_ItemUse_WithAmmo source, Vector2 position, Vector2 velocity, int type,
+            int damage, float knockback)
+        {
+            SpellInstance spell = StoredSpells[equippedSpell];
+            if (spell is { Type: ProjectileSpellType projectileType })
+            {
+                Main.NewText("Projectile: " + projectileType.FullName);
+                type = projectileType.ProjectileID;
+                velocity.Normalize();
+                velocity *= spell.CalculateVelocity(this);
+            }
+            return false;
+            return base.Shoot(player, source, position, velocity, type, damage, knockback);
+        }
+    }
 }
