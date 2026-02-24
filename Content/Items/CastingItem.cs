@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using Microsoft.Xna.Framework;
-using Spellbound.Content.Spells;
+using Spellbound.Content.Projectiles;
 using Spellbound.Data;
 using Spellbound.Data.Spells;
 using Spellbound.Loaders;
@@ -11,6 +11,7 @@ using Terraria.DataStructures;
 using Terraria.ID;
 using Terraria.ModLoader;
 using Terraria.ModLoader.IO;
+using Blast = Spellbound.Content.Spells.Blast;
 
 namespace Spellbound.Content.Items
 { 
@@ -64,10 +65,11 @@ namespace Spellbound.Content.Items
 			Item.useStyle = ItemUseStyleID.Shoot;
 			Item.shootSpeed = 1f;
             Item.mana = 0;
-			Item.shoot = ProjectileID.None;
+			Item.shoot = ProjectileID.PurificationPowder;
 			Item.UseSound = SoundID.DD2_BookStaffCast;
 			Item.useTurn = true;
             Item.autoReuse = false;
+            Item.channel = true;
 			Item.knockBack = 4f;
 		}
 
@@ -114,16 +116,12 @@ namespace Spellbound.Content.Items
 
 		public override void ModifyManaCost(Player player, ref float reduce, ref float mult)
 		{
-			int mana = Item.mana;
             SpellInstance trueSpell = StoredSpells[equippedSpell];
             if (trueSpell != null)
             {
                 reduce += trueSpell.CalculateBaseManaCost(this);
                 mult = trueSpell.BoundElement.ProjectileSpeedMultiplier + FociVelocityMultiplier;
             }
-
-            reduce -= mana;
-
 
             base.ModifyManaCost(player, ref reduce, ref mult);
 		}
@@ -143,7 +141,13 @@ namespace Spellbound.Content.Items
 			return base.CanUseItem(player);
 		}
 
-		public override void ModifyShootStats(Player player, ref Vector2 position, ref Vector2 velocity, ref int type, ref int damage,
+        public override bool? UseItem(Player player)
+        {
+
+            return base.UseItem(player);
+        }
+
+        public override void ModifyShootStats(Player player, ref Vector2 position, ref Vector2 velocity, ref int type, ref int damage,
 			ref float knockback)
 		{
 			MagicPlayerData data = player.GetModPlayer<MagicPlayerData>();
@@ -161,19 +165,31 @@ namespace Spellbound.Content.Items
             }
 		}
 
+        public override bool CanShoot(Player player)
+        {
+            SpellInstance spell = StoredSpells[equippedSpell];
+            if (spell.Type is ProjectileSpellType pSpellType)
+            {
+                return pSpellType.ProjectileID != 0 ? true : false;
+            }
+            return base.CanShoot(player);
+        }
+
         public override bool Shoot(Player player, EntitySource_ItemUse_WithAmmo source, Vector2 position, Vector2 velocity, int type,
             int damage, float knockback)
         {
             SpellInstance spell = StoredSpells[equippedSpell];
             if (spell is { Type: ProjectileSpellType projectileType })
             {
-                Main.NewText("Projectile: " + projectileType.FullName);
-                type = projectileType.ProjectileID;
-                velocity.Normalize();
-                velocity *= spell.CalculateVelocity(this);
+                int id = Projectile.NewProjectile(source, position, velocity, projectileType.ProjectileID, damage, knockback,
+                    player.whoAmI);
+                var proj = Main.projectile[id];
+                if (proj.ModProjectile is SpellboundProjectile sbProj)
+                {
+                    sbProj.SpellData = spell;
+                }
             }
             return false;
-            return base.Shoot(player, source, position, velocity, type, damage, knockback);
         }
     }
 }

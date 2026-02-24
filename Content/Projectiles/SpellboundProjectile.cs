@@ -19,7 +19,6 @@ namespace Spellbound.Content.Projectiles
         public override void OnSpawn(IEntitySource source)
         {
             base.OnSpawn(source);
-            SpellData.HandleStats(this);
         }
 
         public override void SendExtraAI(BinaryWriter writer)
@@ -36,11 +35,8 @@ namespace Spellbound.Content.Projectiles
 
         public override bool PreDraw(ref Color lightColor)
         {
-            Player player = Main.player[Projectile.owner];
-            MagicPlayerData modPlayer = player.GetModPlayer<MagicPlayerData>();
             Color projColor = SpellData.BoundElement.MagicColor;
             Texture2D tex = TextureAssets.Projectile[Projectile.type].Value;
-
             Vector2 pos = Projectile.Center - Main.screenPosition;
             Vector2 origin = tex.Size() / 2f;
             Main.spriteBatch.End();
@@ -86,15 +82,25 @@ namespace Spellbound.Content.Projectiles
             return false;
         }
 
+
         public override void AI()
         {
-            SpellData.HandleAi(this);
+            if (Projectile.ai[0] < 1)
+            {
+                Projectile.ai[0]++;
+                return;
+            }
+            if (SpellData != null)
+            {
+                SpellData.HandleAi(this);
+
+            }
             base.AI();
         }
 
         public override void ModifyDamageHitbox(ref Rectangle hitbox)
         {
-            
+           
             base.ModifyDamageHitbox(ref hitbox);
         }
 
