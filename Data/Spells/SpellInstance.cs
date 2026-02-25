@@ -10,7 +10,7 @@ namespace Spellbound.Data.Spells
 {
     public class SpellInstance
     {
-        public Element BoundElement { get; private set; }
+        public Element BoundElement { get; set; }
         public SpellType Type { get; set; }
         public Dictionary<string, float> Properties { get; } = new();
         public List<SpellModifier> Modifiers { get; } = new();
@@ -24,6 +24,11 @@ namespace Spellbound.Data.Spells
                 Properties.Add(kvp.Key, kvp.Value);
             }
             Modifiers.AddRange(BuildModifiers());
+        }
+
+        public SpellInstance Copy()
+        {
+            return new SpellInstance(BoundElement, Type, Properties);
         }
 
         public float CalculateBaseManaCost(CastingItem item)

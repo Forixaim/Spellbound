@@ -67,6 +67,7 @@ namespace Spellbound.Content.Items
             Item.mana = 0;
 			Item.shoot = ProjectileID.PurificationPowder;
 			Item.UseSound = SoundID.DD2_BookStaffCast;
+            Item.rare = ItemRarityID.Master;
 			Item.useTurn = true;
             Item.autoReuse = false;
             Item.channel = true;
@@ -143,7 +144,6 @@ namespace Spellbound.Content.Items
 
         public override bool? UseItem(Player player)
         {
-
             return base.UseItem(player);
         }
 
@@ -155,10 +155,13 @@ namespace Spellbound.Content.Items
             {
                 return;
             }
+			
 			SpellInstance spell = StoredSpells[equippedSpell];
 			if (spell is { Type: ProjectileSpellType projectileType })
 			{
 				Main.NewText("Projectile: " + projectileType.FullName);
+                if (!player.GetModPlayer<MagicPlayerData>().LearnedElements.Contains(spell.BoundElement))
+                    spell.BoundElement = player.GetModPlayer<MagicPlayerData>().LearnedElements[0];
 				type = projectileType.ProjectileID;
 				velocity.Normalize();
                 velocity *= spell.CalculateVelocity(this);
@@ -172,7 +175,7 @@ namespace Spellbound.Content.Items
             {
                 return pSpellType.ProjectileID != 0 ? true : false;
             }
-            return base.CanShoot(player);
+            return false;
         }
 
         public override bool Shoot(Player player, EntitySource_ItemUse_WithAmmo source, Vector2 position, Vector2 velocity, int type,
@@ -186,7 +189,7 @@ namespace Spellbound.Content.Items
                 var proj = Main.projectile[id];
                 if (proj.ModProjectile is SpellboundProjectile sbProj)
                 {
-                    sbProj.SpellData = spell;
+                    sbProj.SpellData = spell.Copy();
                 }
             }
             return false;

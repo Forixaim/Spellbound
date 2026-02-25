@@ -1,5 +1,6 @@
 ﻿using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
+using ReLogic.Content;
 using Spellbound.Loaders;
 using Terraria.ID;
 using Terraria.ModLoader;
@@ -18,7 +19,7 @@ namespace Spellbound.Data.Magic
         public float KnockbackMultiplier { get; protected set; }
         public int AssociatedEffect { get; protected set; }
         public Color MagicColor { get; protected set; }
-        public Texture2D Icon { get; protected set; }
+        public Asset<Texture2D> Icon { get; protected set; }
 
 
         public virtual void SetDefaults()
@@ -44,6 +45,7 @@ namespace Spellbound.Data.Magic
 
             path = path.Replace('.', '/');
 
+
             return path;
         }
 
@@ -52,19 +54,20 @@ namespace Spellbound.Data.Magic
             SetDefaults();
             Name = GetType().Name;
             FullName = $"{mod.Name}/Element/{Name}";
-            Texture2D buffer;
+            Asset<Texture2D> buffer;
             try
             {
-                buffer = ModContent.Request<Texture2D>(TexturePath()).Value;
+                buffer = ModContent.Request<Texture2D>(TexturePath());
+                mod.Logger.Debug(TexturePath());
             }
             catch
             {
-                mod.Logger.Warn($"Could not find texture for magic: {Name} at path: {TexturePath()}");
-                buffer = ModContent.Request<Texture2D>(ModContent.ItemType<UnloadedItem>().GetType().FullName).Value;
+                mod.Logger.Warn($"Could not find texture for : {Name} at path: {TexturePath()}");
+                buffer = ModContent.Request<Texture2D>(ModContent.ItemType<UnloadedItem>().GetType().FullName);
             }
             Icon = buffer;
             TypeID = ElementLoader.LoadedContent.Count;
-            mod.Logger.Debug($"Loaded magic: {Name}, with ID: {TypeID}");
+            mod.Logger.Debug($"Loaded Element: {Name}, with ID: {TypeID}");
             ElementLoader.LoadedContent.Add(this);
         }
 

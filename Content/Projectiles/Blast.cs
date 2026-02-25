@@ -11,9 +11,9 @@ namespace Spellbound.Content.Projectiles
 
         public override void SetDefaults()
         {
-            Projectile.width = 16;
-            Projectile.height = 16;
-            Projectile.scale = 2f;
+            Projectile.width = 10;
+            Projectile.height = 10;
+            Projectile.scale = 1f;
             Projectile.friendly = true;
             Projectile.DamageType = DamageClass.Magic;
             AIType = ProjectileID.Bullet;

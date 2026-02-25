@@ -29,5 +29,6 @@ namespace Spellbound
             base.Unload();
             DebugKeybind = null;
         }
+
     }
 }
